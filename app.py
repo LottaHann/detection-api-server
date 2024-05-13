@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from importlib import import_module
 import os
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, jsonify
 
 # import camera driver
 if os.environ.get('CAMERA'):
@@ -35,6 +35,13 @@ def video_feed():
     return Response(gen(Camera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route("/see")
+def data():
+  # define some data
+  d = {
+    "persons": [{"person": "yellow", "distance": 1000}, {"person": "red", "distance": 1000}],
+  }
+  return jsonify(d) 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', threaded=True)
