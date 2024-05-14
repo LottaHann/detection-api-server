@@ -58,14 +58,28 @@ class Camera(BaseCamera):
                     fpsCounter[stream] = fpsCounter.get(stream, 0.0) + len(messages)
                     for message in messages:
                         # Display arrived frames
+
                         if type(message) == dai.ImgFrame:
                             # render fps
+                            print(messages.index(message))
                             fps = lastFpsCount.get(stream, 0)
                             frame = message.getCvFrame()
+                            
                             cv2.putText(frame, "Fps: {:.2f}".format(fps), (10, 10), cv2.FONT_HERSHEY_TRIPLEX, 0.4, (255,255,255))
                             # cv2.imshow(stream, frame)
-                            yield cv2.imencode('.jpg', frame)[1].tobytes()
 
+                            yield cv2.imencode('.jpg', frame)[1].tobytes()       
+                ## Pseudo for future reference     
+                # stream = queueNames[0]
+                # messages = device.getOutputQueue(stream).tryGetAll()
+                # if(messages[0] == dai.ImgFrame):
+                #     # render fps
+                #     fps = lastFpsCount.get(stream, 0)
+                #     frame = messages[0].getCvFrame()
+                    
+                #     cv2.putText(frame, "Fps: {:.2f}".format(fps), (10, 10), cv2.FONT_HERSHEY_TRIPLEX, 0.4, (255,255,255))
+                #     frame = messages[0].getCvFrame()
+                #     yield cv2.imencode('.jpg', frame)[1].tobytes()   
                 if time.time() - tfps >= 1.0:
                     scale = time.time() - tfps
                     for stream in fpsCounter.keys():
