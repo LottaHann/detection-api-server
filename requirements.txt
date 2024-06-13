@@ -4,8 +4,5 @@ greenlet==3.0.3
 numpy==1.26.4
 opencv_contrib_python==4.9.0.80
 opencv_python==4.9.0.80
-picamera==1.13
-picamera2==0.3.18
 Pillow==10.3.0
 thread==2.0.3
-v4l2capture==12

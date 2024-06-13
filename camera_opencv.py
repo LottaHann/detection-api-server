@@ -11,10 +11,12 @@ import argparse
 class Camera(BaseCamera):
     video_source = 0
 
+
     def __init__(self):
         if os.environ.get('OPENCV_CAMERA_SOURCE'):
             Camera.set_video_source(int(os.environ['OPENCV_CAMERA_SOURCE']))
         super(Camera, self).__init__()
+
 
     @staticmethod
     def set_video_source(source):
@@ -29,10 +31,12 @@ class Camera(BaseCamera):
         parser = argparse.ArgumentParser()
         parser.add_argument('nnPath', nargs='?', help="Path to mobilenet detection network blob", default=nnPathDefault)
         parser.add_argument('-ff', '--full_frame', action="store_true", help="Perform tracking on full RGB frame", default=False)
+        parser.add_argument('-d', '--debug', action="store_true", help="Get debug sysInfo from camera", default=True)
 
         args = parser.parse_args()
 
         fullFrameTracking = args.full_frame
+        debug = args.debug
 
         # Create pipeline
         pipeline = dai.Pipeline()
@@ -44,6 +48,12 @@ class Camera(BaseCamera):
         monoRight = pipeline.create(dai.node.MonoCamera)
         stereo = pipeline.create(dai.node.StereoDepth)
         objectTracker = pipeline.create(dai.node.ObjectTracker)
+        
+        # Camera Info
+        sysLog = pipeline.create(dai.node.SystemLogger)
+        linkOut = pipeline.create(dai.node.XLinkOut)
+
+        linkOut.setStreamName("sysinfo")
 
         xoutRgb = pipeline.create(dai.node.XLinkOut)
         trackerOut = pipeline.create(dai.node.XLinkOut)
@@ -61,6 +71,8 @@ class Camera(BaseCamera):
         monoLeft.setCamera("left")
         monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
         monoRight.setCamera("right")
+
+        sysLog.setRate(25) # 1 hz
 
         # setting node configs
         stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
@@ -89,6 +101,8 @@ class Camera(BaseCamera):
         objectTracker.passthroughTrackerFrame.link(xoutRgb.input)
         objectTracker.out.link(trackerOut.input)
 
+        sysLog.out.link(linkOut.input)
+
         if fullFrameTracking:
             camRgb.setPreviewKeepAspectRatio(False)
             camRgb.video.link(objectTracker.inputTrackerFrame)
@@ -112,13 +126,38 @@ class Camera(BaseCamera):
             counter = 0
             fps = 0
             color = (255, 255, 255)
+            
+            # Output queue will be used to get the system sysInfo
+
+            qSysInfo = device.getOutputQueue(name="sysinfo", maxSize=4, blocking=False)
+
 
             while(True):
                 imgFrame = preview.get()
                 track = tracklets.get()
-
+                output = ""
+                objects = []
                 counter+=1
                 current_time = time.monotonic()
+
+                sysInfo = qSysInfo.get()  # Blocking call, will wait until a new data has arrived
+
+                # self.printSystemInformation(sysInfo)
+
+                if(debug):
+
+
+                    m = 1024 * 1024  # MiB
+                    output = f"Ddr used / total - {sysInfo.ddrMemoryUsage.used / m:.2f} / {sysInfo.ddrMemoryUsage.total / m:.2f} MiB\n"
+                    output += f"Cmx used / total - {sysInfo.cmxMemoryUsage.used / m:.2f} / {sysInfo.cmxMemoryUsage.total / m:.2f} MiB\n"
+                    output += f"LeonCss heap used / total - {sysInfo.leonCssMemoryUsage.used / m:.2f} / {sysInfo.leonCssMemoryUsage.total / m:.2f} MiB\n"
+                    output += f"LeonMss heap used / total - {sysInfo.leonMssMemoryUsage.used / m:.2f} / {sysInfo.leonMssMemoryUsage.total / m:.2f} MiB\n"
+                    t = sysInfo.chipTemperature
+                    output += f"Chip temperature - average: {t.average:.2f}, css: {t.css:.2f}, mss: {t.mss:.2f}, upa: {t.upa:.2f}, dss: {t.dss:.2f}\n"
+                    output += f"Cpu usage - Leon CSS: {sysInfo.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {sysInfo.leonMssCpuUsage.average * 100:.2f} %\n"
+                    output += "----------------------------------------\n"
+                    
+                    # print(f"\033[2J\033[1;1H{output}", end="", flush=True,)             
                 if (current_time - startTime) > 1 :
                     fps = counter / (current_time - startTime)
                     counter = 0
@@ -146,11 +185,27 @@ class Camera(BaseCamera):
                     cv2.putText(frame, f"X: {int(t.spatialCoordinates.x)} mm", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
                     cv2.putText(frame, f"Y: {int(t.spatialCoordinates.y)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
                     cv2.putText(frame, f"Z: {int(t.spatialCoordinates.z)} mm", (x1 + 10, y1 + 95), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-
+                    tracklet_data = {
+                        "id": t.id,
+                        "label": label,
+                        "status": t.status.name,
+                        "roi": {
+                            "x1": x1,
+                            "y1": y1,
+                            "x2": x2,
+                            "y2": y2
+                        },
+                        "spatialCoordinates": {
+                            "x": int(t.spatialCoordinates.x),
+                            "y": int(t.spatialCoordinates.y),
+                            "z": int(t.spatialCoordinates.z)
+                        }
+                    }
+                    objects.append(tracklet_data)
                 cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
 
 
-                yield cv2.imencode('.jpg', frame)[1].tobytes()
+                yield cv2.imencode('.jpg', frame)[1].tobytes(), objects, output
 
 
  

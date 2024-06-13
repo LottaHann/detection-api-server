@@ -2,6 +2,7 @@
 from importlib import import_module
 import os
 from flask import Flask, render_template, Response, jsonify
+import json
 
 # import camera driver
 if os.environ.get('CAMERA'):
@@ -25,8 +26,17 @@ def gen(camera):
     """Video streaming generator function."""
     yield b'--frame\r\n'
     while True:
-        frame = camera.get_frame()
+        frame, objects, cameraDebug= camera.get_frame()
+        print(f"\033[2J\033[1;1H{cameraDebug}\n{objects}", end="", flush=True,)
         yield b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n--frame\r\n'
+
+def jsonData(camera):
+    """Jsondata streaming generator function."""
+    yield b'--frame\r\n'
+    while True:
+        frame, objects, cameraDebug= camera.get_frame()
+        print(f"\033[2J\033[1;1H{cameraDebug}\n{objects}", end="", flush=True,)
+        return json.dumps(objects)
 
 
 @app.route('/video_feed')
@@ -37,11 +47,8 @@ def video_feed():
 
 @app.route("/see")
 def data():
-  # define some data
-  d = {
-    "persons": [{"person": "yellow", "distance": 1000}, {"person": "red", "distance": 1000}],
-  }
-  return jsonify(d) 
+    """Json data streaming route. Use this data in other client side applications."""
+    return Response(jsonData(Camera()), mimetype='application/json')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', threaded=True)
+    app.run(port=8008, threaded=True)
