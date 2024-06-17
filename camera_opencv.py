@@ -135,7 +135,7 @@ class Camera(BaseCamera):
             while(True):
                 imgFrame = preview.get()
                 track = tracklets.get()
-                output = ""
+                debug_data = ""
                 objects = []
                 counter+=1
                 current_time = time.monotonic()
@@ -148,14 +148,14 @@ class Camera(BaseCamera):
 
 
                     m = 1024 * 1024  # MiB
-                    output = f"Ddr used / total - {sysInfo.ddrMemoryUsage.used / m:.2f} / {sysInfo.ddrMemoryUsage.total / m:.2f} MiB\n"
-                    output += f"Cmx used / total - {sysInfo.cmxMemoryUsage.used / m:.2f} / {sysInfo.cmxMemoryUsage.total / m:.2f} MiB\n"
-                    output += f"LeonCss heap used / total - {sysInfo.leonCssMemoryUsage.used / m:.2f} / {sysInfo.leonCssMemoryUsage.total / m:.2f} MiB\n"
-                    output += f"LeonMss heap used / total - {sysInfo.leonMssMemoryUsage.used / m:.2f} / {sysInfo.leonMssMemoryUsage.total / m:.2f} MiB\n"
+                    debug_data = f"Ddr used / total - {sysInfo.ddrMemoryUsage.used / m:.2f} / {sysInfo.ddrMemoryUsage.total / m:.2f} MiB\n"
+                    debug_data += f"Cmx used / total - {sysInfo.cmxMemoryUsage.used / m:.2f} / {sysInfo.cmxMemoryUsage.total / m:.2f} MiB\n"
+                    debug_data += f"LeonCss heap used / total - {sysInfo.leonCssMemoryUsage.used / m:.2f} / {sysInfo.leonCssMemoryUsage.total / m:.2f} MiB\n"
+                    debug_data += f"LeonMss heap used / total - {sysInfo.leonMssMemoryUsage.used / m:.2f} / {sysInfo.leonMssMemoryUsage.total / m:.2f} MiB\n"
                     t = sysInfo.chipTemperature
-                    output += f"Chip temperature - average: {t.average:.2f}, css: {t.css:.2f}, mss: {t.mss:.2f}, upa: {t.upa:.2f}, dss: {t.dss:.2f}\n"
-                    output += f"Cpu usage - Leon CSS: {sysInfo.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {sysInfo.leonMssCpuUsage.average * 100:.2f} %\n"
-                    output += "----------------------------------------\n"
+                    debug_data += f"Chip temperature - average: {t.average:.2f}, css: {t.css:.2f}, mss: {t.mss:.2f}, upa: {t.upa:.2f}, dss: {t.dss:.2f}\n"
+                    debug_data += f"Cpu usage - Leon CSS: {sysInfo.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {sysInfo.leonMssCpuUsage.average * 100:.2f} %\n"
+                    debug_data += "----------------------------------------\n"
                     
                     # print(f"\033[2J\033[1;1H{output}", end="", flush=True,)             
                 if (current_time - startTime) > 1 :
@@ -205,7 +205,7 @@ class Camera(BaseCamera):
                 cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
 
 
-                yield cv2.imencode('.jpg', frame)[1].tobytes(), objects, output
+                yield cv2.imencode('.jpg', frame)[1].tobytes(), objects, debug_data
 
 
  
