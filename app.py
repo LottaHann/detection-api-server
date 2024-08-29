@@ -77,4 +77,4 @@ def data():
     return Response(jsonData(Camera()), mimetype='application/json')
 
 if __name__ == '__main__':
-    app.run(port=8008, threaded=True)
+    app.run( host='0.0.0.0', port=8008, threaded=True)
