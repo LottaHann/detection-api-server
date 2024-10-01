@@ -8,11 +8,18 @@ import numpy as np
 from base64 import b64encode
 from enum import Enum
 import uuid
+import os
+
 
 class Camera(BaseCamera):
-    def __init__(self, flip = False, file_type  = ".jpg", photo_string= "stream_photo", camera_index=4):
+    def __init__(self, flip = False, file_type  = ".jpg", photo_string= "stream_photo", camera_index=0):
         # self.vs = PiVideoStream(resolution=(1920, 1080), framerate=30).start()
-        
+        if os.environ.get('MODULE'):
+            print("Checking cameras")
+            module=int(os.environ['MODULE'])
+            camera_index=module
+
+        self.camera_index = camera_index
         self.flip = flip # Flip frame vertically
         self.file_type = file_type # image type i.e. .jpg
         self.model = cv.dnn.readNetFromTensorflow('models/frozen_inference_graph.pb',
@@ -60,7 +67,7 @@ class Camera(BaseCamera):
     def frames():
         """Retrieves a frame from the video source, processes it, and returns it as a JPEG-encoded byte string along with person detection status. """
         camera = Camera()
-        camera.vs = cv.VideoCapture(0)
+        camera.vs = cv.VideoCapture(camera.camera_index)
         
         # ret, frame = self.flip_if_needed(self.vs.read())
         while True:
@@ -87,7 +94,7 @@ class Camera(BaseCamera):
         self.vs.release()
 
 
-    def detect_and_draw_person(self,frame, confidence_threshold=0.5):
+    def detect_and_draw_person(self,frame, confidence_threshold=0.7):
         """Detects and draws bounding boxes around persons in a given frame.
 
         Args:

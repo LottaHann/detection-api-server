@@ -2,6 +2,7 @@
 FROM python:3.10-slim
 
 ARG DEFAULT_CAMERA=opencv
+ARG DEFAULT_MODULE=0
 
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
@@ -24,6 +25,6 @@ EXPOSE 8008
 
 # Define environment variable
 ENV CAMERA=${DEFAULT_CAMERA}
-
+ENV MODULE=${DEFAULT_MODULE}
 # Run app.py when the container launches
 CMD ["python", "app.py"]
