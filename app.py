@@ -4,6 +4,9 @@ import os
 from flask import Flask, render_template, Response, jsonify
 import json
 import time
+from flask_cors import CORS
+
+
 
 # import camera driver
 if os.environ.get('CAMERA'):
@@ -15,6 +18,9 @@ else:
 # from camera_pi import Camera
 
 app = Flask(__name__)
+CORS(app, resources={r"/see": {"origins":[ 'http://127.0.0.1:5000', "http://localhost:5000"]}})
+
+
 
 
 @app.route('/')
