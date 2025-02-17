@@ -17,8 +17,18 @@ else:
 # Raspberry Pi camera module (requires picamera package)
 # from camera_pi import Camera
 
+laptop_ip = "193.167.36.67"
+rpi_ip = "193.166.180.103"
+expression_port = 8008
+main_server_port = 5100
+main_frontend_port = 5500
+#etection_server_url = os.environ.get('SERVER_URL', 'http://127.0.0.1:8008')
+expression_server_url = f'http://{rpi_ip}:{expression_port}'
+main_server_url = f'http://{laptop_ip}:{main_server_port}'
+main_frontend_url = f'http://{laptop_ip}:{main_frontend_port}'
+
 app = Flask(__name__)
-CORS(app, resources={r"/see": {"origins":[ 'http://127.0.0.1:5000', "http://localhost:5000"]}})
+CORS(app, resources={r"/see": {"origins":[ expression_server_url]}})
 
 
 
