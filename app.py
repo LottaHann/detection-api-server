@@ -5,6 +5,7 @@ from flask import Flask, render_template, Response, jsonify
 import json
 import time
 from flask_cors import CORS
+import requests
 
 
 
@@ -50,7 +51,6 @@ def gen(camera):
 def jsonData(camera):
     """Jsondata streaming generator function."""
     debug = False
-    # yield b'--frame\r\n'
     while True:
         testData  =[ {
                         "id": "0",
@@ -72,11 +72,11 @@ def jsonData(camera):
             frame, objects, cameraDebug= camera.get_frame()
             json_data = objects
             print(f"\033[2J\033[1;1H{cameraDebug}\n{objects}", end="", flush=True,)
-            send_data =json.dumps(json_data)
+            send_data = json.dumps(json_data)
             return send_data
 
         if(debug):
-            return json.dump(testData)
+            return json.dumps(testData)
         
         # return json.dumps(objects)
 

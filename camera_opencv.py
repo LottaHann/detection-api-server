@@ -6,6 +6,17 @@ import depthai as dai
 from base_camera import BaseCamera
 import numpy as np
 import argparse
+import requests
+
+
+def send_data_to_server(data):
+    """Send data to the server on port 5000."""
+    server_url = 'http://127.0.0.1:5000/receive_data'
+    try:
+        response = requests.post(server_url, json=data)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send data to server: {e}")
 
 
 class Camera(BaseCamera):
@@ -204,8 +215,10 @@ class Camera(BaseCamera):
                     objects.append(tracklet_data)
                 cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
 
+                # Send data to server if a person is detected
+                if any(obj['label'] == 'person' for obj in objects):
+                    send_data_to_server(objects)
 
                 yield cv2.imencode('.jpg', frame)[1].tobytes(), objects, debug_data
 
 
- 
